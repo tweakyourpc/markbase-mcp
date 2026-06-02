@@ -1,0 +1,12 @@
+{
+  "_comment": "Paste into your Claude Code MCP config.",
+  "mcpServers": {
+    "markbase": {
+      "command": "python",
+      "args": ["/path/to/markbase-mcp/mcp_server.py"],
+      "env": {
+        "MARKBASE_URL": "http://localhost:8733"
+      }
+    }
+  }
+}
