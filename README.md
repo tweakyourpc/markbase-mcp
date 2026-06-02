@@ -57,4 +57,11 @@ One MarkBase library plus one MCP server means Claude Code, Codex CLI, and Gemin
 
 ## Roadmap
 
-This is Phase 2 of MarkBase, the personal RAG layer. Phase 3 will add tag-based context bundles and project-aware auto-injection of relevant library items at session start.
+This is Phase 2 of MarkBase, the personal RAG layer.
+
+### Phase 3, Project-aware context (planned)
+
+- Tag items in MarkBase with a project name (e.g. `#homelab`, `#markbase`, `#work`)
+- When starting a Claude Code or Codex session in a project folder, the MCP server automatically surfaces relevant library items as context, no manual searching required
+- Bundle multiple tagged items into a single context package with one tool call
+- Shared MarkBase mode: point multiple machines or team members at the same library for a shared knowledge base (help desk KB, team wiki, onboarding docs)
