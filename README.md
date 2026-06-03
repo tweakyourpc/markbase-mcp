@@ -1,6 +1,6 @@
 # markbase-mcp
 
-MCP server companion for MarkBase, gives Claude Code, Codex CLI, and Gemini CLI shared access to your personal knowledge library.
+MCP server companion for MarkBase. It gives Claude Code, Codex CLI, and Gemini CLI shared access to your personal knowledge library, and now includes Phase 3 project-aware context.
 
 ## Prerequisites
 
@@ -24,44 +24,85 @@ MCP server companion for MarkBase, gives Claude Code, Codex CLI, and Gemini CLI 
    - Codex CLI: `config-examples/codex.json`
    - Gemini CLI: `config-examples/gemini.json`
 
+If your MCP client does not expose workspace roots to the server, set a stable project override in the MCP config:
+
+```json
+{
+  "env": {
+    "MARKBASE_URL": "http://localhost:8733",
+    "MARKBASE_PROJECT": "markbase"
+  }
+}
+```
+
 ## Tools
 
 - `search_knowledge(query: str)`
-  - Use when you want to answer “what do I already know about X?” before starting work.
+  - Search MarkBase before starting a task to see what you already know about a topic.
 - `save_note(title: str, content: str, tags: list[str] = [])`
-  - Use to save research findings, explanations, snippets, or links discovered mid-session.
+  - Save a hand-authored markdown note to the MarkBase library.
 - `read_item(path: str)`
-  - Use after search to read the full markdown content of a specific item.
+  - Read the full markdown content and metadata for a specific MarkBase item.
 - `list_library(source_type: str = None, channel: str = None)`
-  - Use to browse what is already in the library before searching.
+  - Browse the full MarkBase library index.
 - `ingest_url(url: str)`
-  - Use to add a YouTube video, channel, or web page to MarkBase without leaving the terminal.
+  - Submit a YouTube or web URL to the MarkBase ingestion queue.
+- `resolve_project(project_name: str | None = None, cwd: str | None = None)`
+  - Resolve the active project from an explicit name, env override, or MCP workspace roots.
+- `tag_item_for_project(path: str, project_name: str | None = None, cwd: str | None = None)`
+  - Apply the resolved project tag to an existing library item.
+- `project_context(project_name: str | None = None, cwd: str | None = None, limit: int = 5, include_content: bool = True)`
+  - Return one bundled context payload for the resolved project.
 
-## How it works
+## Resources
 
-One MarkBase library plus one MCP server means Claude Code, Codex CLI, and Gemini CLI all share the same brain. This repo does not modify MarkBase. It is a thin companion layer that talks to an already-running MarkBase instance over its existing HTTP API.
+- `markbase://project-context/current`
+  - JSON bundle for the current MCP client project, using workspace roots when available.
+- `markbase://project-context/{project_name}`
+  - JSON bundle for a named project.
+
+## Prompts
+
+- `bootstrap_project_context(project_name: str | None = None)`
+  - Returns an agent-ready briefing that includes the bundled MarkBase project context.
+
+## How project detection works
+
+The server resolves the active project in this order:
+
+1. Explicit `project_name` argument
+2. Env overrides such as `MARKBASE_PROJECT` or `PROJECT_NAME`
+3. MCP client workspace roots via `roots/list`
+4. Fallback root paths such as `MARKBASE_PROJECT_ROOT`, `PROJECT_ROOT`, `INIT_CWD`, or `PWD`
+
+The canonical project tag format is `#project-name`.
+
+## Phase 3 status
+
+Phase 3 is implemented:
+
+- Project tags are first-class through standard MarkBase tags such as `#markbase`, `#homelab`, or `#work`.
+- The MCP server can resolve the active project automatically from client roots or explicit overrides.
+- Multiple tagged items can be bundled into one context payload with `project_context(...)`.
+- The same context is also exposed as MCP resources and a bootstrap prompt for clients that consume those surfaces.
+- Shared MarkBase usage works by pointing multiple machines or users at the same MarkBase instance and library.
 
 ## Workflow examples
 
 - Before starting a task:
-  - `search_knowledge("proxmox PCIe passthrough")`
-  - This can surface your existing CraftComputing transcripts before you start solving the problem again.
+  - `project_context()`
+  - Or read `markbase://project-context/current`
+  - Or use `bootstrap_project_context()`
 
-- Mid-session discovery:
-  - `save_note("TIL", "yt-dlp flat playlist flag...", ["yt-dlp", "youtube"])`
-  - This saves the discovery instantly into MarkBase.
+- Tag an item for the current repo:
+  - `tag_item_for_project("notes/til-yt-dlp")`
 
-- Building the library without leaving the terminal:
+- Save a project-specific discovery:
+  - `save_note("TIL", "yt-dlp flat playlist flag...", ["yt-dlp", "youtube", "#markbase"])`
+
+- Build the library without leaving the terminal:
   - `ingest_url("https://youtube.com/@craftcomputing")`
-  - This submits the channel to MarkBase’s ingestion queue.
 
-## Roadmap
+## Notes
 
-This is Phase 2 of MarkBase, the personal RAG layer.
-
-### Phase 3, Project-aware context (planned)
-
-- Tag items in MarkBase with a project name (e.g. `#homelab`, `#markbase`, `#work`)
-- When starting a Claude Code or Codex session in a project folder, the MCP server automatically surfaces relevant library items as context, no manual searching required
-- Bundle multiple tagged items into a single context package with one tool call
-- Shared MarkBase mode: point multiple machines or team members at the same library for a shared knowledge base (help desk KB, team wiki, onboarding docs)
+This repo remains a thin companion layer over MarkBase’s HTTP API. The project-aware behavior is implemented in the MCP layer, not by adding a second indexing system.

@@ -1,11 +1,12 @@
 {
-  "_comment": "Paste this block into your Gemini CLI ~/.gemini/settings.json mcpServers section.",
+  "_comment": "Paste this block into your Gemini CLI ~/.gemini/settings.json mcpServers section. Set MARKBASE_PROJECT if your client does not expose workspace roots.",
   "mcpServers": {
     "markbase": {
       "command": "python",
       "args": ["/path/to/markbase-mcp/mcp_server.py"],
       "env": {
-        "MARKBASE_URL": "http://localhost:8733"
+        "MARKBASE_URL": "http://localhost:8733",
+        "MARKBASE_PROJECT": "markbase"
       }
     }
   }

@@ -1,11 +1,12 @@
 {
-  "_comment": "Paste into your Claude Code MCP config.",
+  "_comment": "Paste into your Claude Code MCP config. Set MARKBASE_PROJECT if your client does not expose workspace roots.",
   "mcpServers": {
     "markbase": {
       "command": "python",
       "args": ["/path/to/markbase-mcp/mcp_server.py"],
       "env": {
-        "MARKBASE_URL": "http://localhost:8733"
+        "MARKBASE_URL": "http://localhost:8733",
+        "MARKBASE_PROJECT": "markbase"
       }
     }
   }
