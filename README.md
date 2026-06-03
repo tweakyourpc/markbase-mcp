@@ -1,4 +1,4 @@
-![MarkBase hero](docs/markbase.png)
+![MarkBase hero](/markbase.png)
 
 # markbase-mcp
 MCP server companion for MarkBase, gives Claude Code, Codex CLI, and Gemini CLI shared access to your personal knowledge library.
