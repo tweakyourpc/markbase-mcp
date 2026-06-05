@@ -42,6 +42,9 @@ def _load_markbase_url() -> str:
 
 MARKBASE_URL = _load_markbase_url().rstrip("/")
 mcp = FastMCP("markbase")
+NOTE_CREATED_VIA = "markbase-mcp"
+NOTE_DEFAULT_AUTHORSHIP = "agent-authored"
+NOTE_DEFAULT_AI_PROCESSING = "none"
 
 
 async def _request(method: str, path: str, **kwargs: Any) -> Any:
@@ -64,6 +67,54 @@ def _humanize_error(payload: Any) -> Any:
     if isinstance(payload, dict) and "error" in payload:
         return payload["error"]
     return payload
+
+
+def _yaml_scalar(value: str) -> str:
+    return json.dumps(str(value), ensure_ascii=False)
+
+
+def _content_with_note_provenance(
+    content: str,
+    authorship: str = NOTE_DEFAULT_AUTHORSHIP,
+    ai_processing: str = NOTE_DEFAULT_AI_PROCESSING,
+) -> str:
+    body = content or ""
+    resolved_authorship = authorship or NOTE_DEFAULT_AUTHORSHIP
+    resolved_ai_processing = ai_processing or NOTE_DEFAULT_AI_PROCESSING
+    front_matter = "\n".join(
+        [
+            "---",
+            f"created_via: {_yaml_scalar(NOTE_CREATED_VIA)}",
+            f"authorship: {_yaml_scalar(resolved_authorship)}",
+            f"ai_processing: {_yaml_scalar(resolved_ai_processing)}",
+            "---",
+            "",
+        ]
+    )
+    return f"{front_matter}{body}"
+
+
+def _save_note_payload(
+    title: str,
+    content: str,
+    tags: list[str] | None = None,
+    authorship: str = NOTE_DEFAULT_AUTHORSHIP,
+    ai_processing: str = NOTE_DEFAULT_AI_PROCESSING,
+) -> dict[str, Any]:
+    resolved_authorship = authorship or NOTE_DEFAULT_AUTHORSHIP
+    resolved_ai_processing = ai_processing or NOTE_DEFAULT_AI_PROCESSING
+    return {
+        "title": title,
+        "content": _content_with_note_provenance(
+            content,
+            authorship=resolved_authorship,
+            ai_processing=resolved_ai_processing,
+        ),
+        "tags": tags or [],
+        "created_via": NOTE_CREATED_VIA,
+        "authorship": resolved_authorship,
+        "ai_processing": resolved_ai_processing,
+    }
 
 
 def _normalize_project_name(value: str) -> str:
@@ -254,13 +305,18 @@ async def search_knowledge(query: str) -> Any:
 
 
 @mcp.tool()
-async def save_note(title: str, content: str, tags: list[str] = []) -> Any:
-    """Save a hand-authored markdown note to the MarkBase library."""
+async def save_note(
+    title: str,
+    content: str,
+    tags: list[str] = [],
+    authorship: str = NOTE_DEFAULT_AUTHORSHIP,
+) -> Any:
+    """Save an agent-authored markdown note to the MarkBase library."""
 
     payload = await _request(
         "POST",
         "/api/note",
-        json={"title": title, "content": content, "tags": tags},
+        json=_save_note_payload(title=title, content=content, tags=tags, authorship=authorship),
     )
     return _humanize_error(payload)
 

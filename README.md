@@ -26,8 +26,8 @@ MCP server companion for MarkBase, gives Claude Code, Codex CLI, and Gemini CLI 
 ## Tools
 - `search_knowledge(query: str)`
   - Use when you want to answer "what do I already know about X?" before starting work.
-- `save_note(title: str, content: str, tags: list[str] = [])`
-  - Use to save research findings, explanations, snippets, or links discovered mid-session.
+- `save_note(title: str, content: str, tags: list[str] = [], authorship: str = "agent-authored")`
+  - Use to save research findings, explanations, snippets, or links discovered mid-session. Notes created through markbase-mcp include provenance metadata: `created_via: markbase-mcp`, `authorship: agent-authored`, and `ai_processing: none`.
 - `read_item(path: str)`
   - Use after search to read the full markdown content of a specific item.
 - `list_library(source_type: str = None, channel: str = None)`
@@ -53,6 +53,19 @@ MCP server companion for MarkBase, gives Claude Code, Codex CLI, and Gemini CLI 
 
 ## How it works
 One MarkBase library plus one MCP server means Claude Code, Codex CLI, and Gemini CLI all share the same brain. This repo does not modify MarkBase. It is a thin companion layer that talks to an already-running MarkBase instance over its existing HTTP API.
+
+## Note provenance
+MarkBase core remains the deterministic storage and ingestion layer. Its existing `ai_status` field describes whether a separate AI processing step was applied during ingestion, such as summarization or enrichment. It does not by itself describe who authored the note content.
+
+Notes created through `save_note()` are considered agent-authored by default unless the caller supplies a different `authorship` value. markbase-mcp sends provenance fields in the `/api/note` JSON request for MarkBase versions that support richer note metadata, and it also prefixes the note body with Markdown front matter so older MarkBase versions preserve the same provenance information as content. The default provenance is:
+
+```yaml
+created_via: "markbase-mcp"
+authorship: "agent-authored"
+ai_processing: "none"
+```
+
+`ai_processing: none` means markbase-mcp did not run a separate AI processing pipeline after the note was authored. It does not mean the note was human-authored.
 
 ## How project detection works
 The server resolves the active project in this order:
